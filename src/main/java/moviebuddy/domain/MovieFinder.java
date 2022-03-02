@@ -1,22 +1,16 @@
 package moviebuddy.domain;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import moviebuddy.ApplicationException;
-import moviebuddy.util.FileSystemUtils;
 
-public class MovieFinder {
+/**
+ * 부모 클래스에 기본적인 알고리즘의 흐름을 구현하고 중간에 필요한 처리를
+ * 자식 클래스에서 위임하는 구조를 디자인 패턴에서는 템플릿 메서드 패턴
+ * (template method pattern)이라 한다.
+ */
+public abstract class MovieFinder {
 
 	/**
 	 * 저장된 영화 목록에서 감독으로 영화를 검색한다.
@@ -47,39 +41,6 @@ public class MovieFinder {
 	 *
 	 * @return 불러온 영화 목록
 	 */
-	public List<Movie> loadMovies() {
-		try {
-			final URI resourceUri = ClassLoader.getSystemResource("movie_metadata.csv").toURI();
-			final Path data = Path.of(FileSystemUtils.checkFileSystem(resourceUri));
-			final Function<String, Movie> mapCsv = csv -> {
-				try {
-					// split with comma
-					String[] values = csv.split(",");
+	public abstract List<Movie> loadMovies();
 
-					String title = values[0];
-					List<String> genres = Arrays.asList(values[1].split("\\|"));
-					String language = values[2].trim();
-					String country = values[3].trim();
-					int releaseYear = Integer.valueOf(values[4].trim());
-					String director = values[5].trim();
-					List<String> actors = Arrays.asList(values[6].split("\\|"));
-					URL imdbLink = new URL(values[7].trim());
-					String watchedDate = values[8];
-
-					return Movie.of(title, genres, language, country, releaseYear, director, actors, imdbLink,
-						watchedDate);
-				} catch (IOException error) {
-					throw new ApplicationException("mapping csv to object failed.", error);
-				}
-			};
-
-			return Files.readAllLines(data, StandardCharsets.UTF_8)
-				.stream()
-				.skip(1)
-				.map(mapCsv)
-				.collect(Collectors.toList());
-		} catch (IOException | URISyntaxException error) {
-			throw new ApplicationException("failed to load movies data.", error);
-		}
-	}
 }
